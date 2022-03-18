@@ -33,9 +33,9 @@ echo "changing directory"
 cd Senior-Project-GitHub-Backup/
 
 # No need to backup the backup
-echo "removing the backup file from the staging area"
+#echo "removing the backup file from the staging area"
 #echo "Senior-Project-GitHub-Backup" > .gitignore
-git rm -r Senior-Project-GitHub-Backup/
+#git rm -r Senior-Project-GitHub-Backup/
 
 # Add all files in the curren working directory to the staging area
 echo "adding files"
