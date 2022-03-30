@@ -62,6 +62,7 @@ int main(){
 	//cout << html() << head() << "<meta http-equiv=\"refresh\" content=\"0; URL=192.168.7.2:8080/cgi-bin/controlAD9833.cgi\" />" << head() << html();
 	cout << html() << body() << h1("Output is enabled.") << endl;
 	cout << h3("Click the back button on your browser to return to the previous page.") << endl;
+	cout << h3("Note: you may need to refresh the control page for the output status displayed there to be up-to-date.") << endl;
 	cout << body() << html();
 	return 0;
 }

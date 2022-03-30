@@ -163,8 +163,8 @@ int main(){
    // generate the form but use states that are set in the submitted form
    // Functions come from the cgicc library
    cout << HTTPHTMLHeader() << endl;       // Generate the HTML form
-   cout << html() << head() << title("Control AD9833") << head() << endl;
-   cout << body() << h1("Control your AD9833 function generator") << endl;
+   cout << html() << head() << title("Smart-Control Digital Waveform Synthesizer") << head() << endl;
+   cout << body() << h1("Smart-Control Digital Waveform Synthesizer Control Page") << endl;
    cout << h1("Enter commands below to execute them on the device.") << endl;
    cout << "<div style=\"color:blue;\">Please enter a frequency value, and select a waveform type.</div>";
    // Start a form
