@@ -168,7 +168,7 @@ int main(){
    cout << h1("Enter commands below to execute them on the device.") << endl;
    cout << "<div style=\"color:blue;\">Please enter a frequency value, and select a waveform type.</div>";
    // Start a form
-   cout << "<form action=\"/cgi-bin/controlAD9833.cgi\" method=\"GET\" onsubmit=\"return false;\">\n";
+   cout << "<form action=\"/cgi-bin/controlAD9833.cgi\" method=\"GET\">\n";
 
 
 
