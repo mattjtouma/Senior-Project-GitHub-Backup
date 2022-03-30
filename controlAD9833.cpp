@@ -21,7 +21,10 @@
 using namespace std;
 using namespace cgicc;
 
+// The maximum frequency that can be programmed to the AD9833
+#define MAX_FREQ 12500000
 
+// Function to initialize UART on the BeagleBone
 int openUART(void){
 	int file;
 	if ((file = open("/dev/ttyO4", O_RDWR | O_NOCTTY | O_NDELAY))<0){
@@ -42,6 +45,7 @@ int openUART(void){
 	return file;
 }
 
+// This function sends a string over UART
 int uartWrite(const char *transmit){
 	int count;
 	int file = openUART();
@@ -57,6 +61,7 @@ int uartWrite(const char *transmit){
 	}
 }
 
+// This function writes a string to UART and listens for a response
 string writeAndRead(const char *transmit){
    int count;
    int file = openUART();	
@@ -250,6 +255,9 @@ int main(){
    //cout << h2(freq) << endl;
 
   if (isNumber(freq) && stof(freq) >= 0){
+	  if(stof(freq)*multiplier > 12500000){
+		  freq = "12.5"; // freq must be a string type
+	  }
 	   uartWrite((func + "," + to_string(stof(freq)*multiplier)).c_str());
 	   // Update the current frequency 
 	   current_freq = to_string(stof(freq)*multiplier);
@@ -303,8 +311,8 @@ int main(){
    cout << "<input type=\"submit\" value=\"Disable Output\" formaction=\"/cgi-bin/disable.cgi\" />";
    cout << "</p>";
 
-   // Select Sine as default waveform
-   if (func == "Sine"){
+   // Select the waveform
+   if (current_wavetype == "Sine"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
 		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
@@ -312,7 +320,7 @@ int main(){
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/> Square ";
    }
-   else if (func == "Triangle"){
+   else if (current_wavetype == "Triangle"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
 		<< ( func=="Sine" ? "checked":"") << "/> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
@@ -320,7 +328,7 @@ int main(){
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/> Square ";
    }
-   else if (func == "Square"){
+   else if (current_wavetype == "Square"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
 		<< ( func=="Sine" ? "checked":"") << "/> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
@@ -328,14 +336,14 @@ int main(){
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/checked> Square ";
    }
-   else{
-	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
-		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
-	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
-		<< ( func=="Triangle" ? "checked":"") << "/> Triangle ";
-	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
-		<< ( func=="Square" ? "checked":"") << "/> Square ";
-   }
+//   else{
+//	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
+//		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
+//	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
+//		<< ( func=="Triangle" ? "checked":"") << "/> Triangle ";
+//	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
+//		<< ( func=="Square" ? "checked":"") << "/> Square ";
+//   }
 
    cout << "<input type=\"submit\" value=\"Set Output\" />";
    
