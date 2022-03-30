@@ -220,28 +220,6 @@ int main(){
    current_freq = writeAndRead("getfrequency");
    usleep(1000000); // This delay is necessary to give the Arduino time
 
-   // Get the output status
-   outputStatus = writeAndRead("getOS");
-   usleep(1000000);
-
-   // Remove whitespace from outputStatus
-   //outputStatus.erase(remove_if(outputStatus.begin(), outputStatus.end(), ::isspace), outputStatus.end());
-   // Remove any non-digits
-   //outputStatus = remove_non_digits(outputStatus);
-   
-
-   // if outputStatus starts with 0, output is off
-   // if outputStatus starts with 1, output is on
-   // Here, I am just re-assigning "ON" or "OFF" to outputStatus.
-   if (outputStatus.rfind("1", 0) == 0) { // pos=0 limits the search to the prefix
-	   // outputStatus starts with 1
-	   outputStatus = "ON";
-   }
-   else{
-	  // outputStatus starts with 0
-	  outputStatus = "OFF";
-   }
-
 
    // Obtain the correct multiplier
    float multiplier;
@@ -360,6 +338,28 @@ int main(){
    cout << "</div>";
  
    	      	
+
+   // Get the output status
+   outputStatus = writeAndRead("getOS");
+   usleep(1000000);
+
+   // Remove whitespace from outputStatus
+   //outputStatus.erase(remove_if(outputStatus.begin(), outputStatus.end(), ::isspace), outputStatus.end());
+   // Remove any non-digits
+   //outputStatus = remove_non_digits(outputStatus);
+   
+
+   // if outputStatus starts with 0, output is off
+   // if outputStatus starts with 1, output is on
+   // Here, I am just re-assigning "ON" or "OFF" to outputStatus.
+   if (outputStatus.rfind("1", 0) == 0) { // pos=0 limits the search to the prefix
+	   // outputStatus starts with 1
+	   outputStatus = "ON";
+   }
+   else{
+	  // outputStatus starts with 0
+	  outputStatus = "OFF";
+   }
 
 
 
