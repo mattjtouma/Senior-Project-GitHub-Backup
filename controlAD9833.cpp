@@ -151,13 +151,16 @@ int main(){
 
    Cgicc form;                      // the CGI form object
    HTMLAttribute value;
-   string func;                      // the Set LED command
-   string freq = "";
+   string func;
+   string freq_with_multiplier = "";
+   string freq_without_multiplier = "";
    string mult;
    string en;
    string current_freq = "";
    string current_wavetype;
    string outputStatus;
+   int mult_flag = 0;
+   float multiplier;
    
 
    // generate the form but use states that are set in the submitted form
@@ -168,44 +171,91 @@ int main(){
    cout << h1("Enter commands below to execute them on the device.") << endl;
    cout << "<div style=\"color:blue;\">Please enter a frequency value, and select a waveform type.</div>";
    // Start a form
-   cout << "<form action=\"/cgi-bin/controlAD9833.cgi\" method=\"GET\">\n";
+   cout << "<form action=\"/cgi-bin/controlAD9833.cgi\" method=\"POST\">\n";
 
-
-
-
-
-
-
-   // Get the current wavetype
-   current_wavetype = get_current_wavetype();
+  
 
    // Waveform Set form
    form_iterator it = form.getElement("func");  // the radio command
+   //func = it->getValue(); // use submitted value
    if (it == form.getElements().end() || it->getValue()==""){
-      func = current_wavetype;  // if it is invalid use the current wavetype
+	// Get the current wavetype
+      	func = get_current_wavetype();  // if it is invalid use the current wavetype
    }
-   else { func = it->getValue(); }      // otherwise use submitted value
+   else {
+	func = it->getValue(); // otherwise use submitted value
+   }
+
 
    // Frequency Set form
    form_iterator freq_it = form.getElement("freq");
    if (freq_it == form.getElements().end() || freq_it->getValue()==""){
-	   // Get the current frequency running on the board
-           //freq = writeAndRead("getfrequency");
-           //usleep(1000000); // This delay is necessary to give the Arduino time
-           freq = "*"; // if it is invalid don't change the frequency
+   	   // Get the current frequency running on the board
+	   current_freq = writeAndRead("getfrequency");
+	   usleep(1000000); // This delay is necessary to give the Arduino time
+
+           freq_with_multiplier = current_freq; // if it is invalid don't change the frequency
+	   mult_flag = 1;
    }
    else{
-	   freq = freq_it->getValue(); // otherwise use submitted value
+	   freq_without_multiplier = freq_it->getValue(); // otherwise use submitted value
+	   mult_flag = 0;
    }
 
    // Frequency multiplier
    form_iterator mult_it = form.getElement("mult");
-   if (mult_it == form.getElements().end() || mult_it->getValue()==""){
-	   mult = "Hz"; // if it is invalid multiply by 1
+  // mult = mult_it->getValue(); // use submitted value
+   
+   //if (mult_it == form.getElements().end() || mult_it->getValue()==""){
+    if (mult_it == form.getElements().end()){
+   	   mult = "Hz"; // if it is invalid multiply by 1
    }
    else{
-	   mult = mult_it->getValue();
+   	   mult = mult_it->getValue();
    }
+   
+
+   switch(mult_flag){
+	   case 0 : // if frequency was entered use the multiplier
+	
+	   	// Obtain the correct multiplier
+		if (mult == "mHz") multiplier = 0.001;
+	        else if (mult == "Hz") multiplier = 1;
+	        else if (mult == "kHz") multiplier = 1000;
+	        else multiplier = 1000000;
+
+		// Modify freq_without_multiplier
+		//freq_without_multiplier = to_string(stof(freq_with_multiplier)/multiplier);
+
+		// Define freq_with_multiplier
+		freq_with_multiplier = to_string(stof(freq_without_multiplier)*multiplier);
+		
+		break;
+
+	   case 1 : // if no frequency was entered, get the multiplier
+		
+		// freq_without_multiplier isn't defined yet, so define it
+		if (stof(freq_with_multiplier) < 1){
+			freq_without_multiplier = to_string(stof(freq_with_multiplier)*1000);
+			mult = "mHz";
+    		}
+		else if (stof(freq_with_multiplier) >= 1 & stof(freq_with_multiplier) < 1000){
+			freq_without_multiplier = freq_with_multiplier;
+			mult = "Hz";
+    		}
+		else if (stof(freq_with_multiplier) >= 1000 & stof(freq_with_multiplier) < 1000000){
+			freq_without_multiplier = to_string(stof(freq_with_multiplier)/1000);
+			mult = "kHz";
+		}
+    		else{
+			freq_without_multiplier = to_string(stof(freq_with_multiplier)/1000000);
+			mult = "MHz";
+    		}
+
+		break;
+   }// switch
+   
+   // At this point, both freq_with_multiplier and freq_without_multiplier are defined.
 
 
 
@@ -214,11 +264,10 @@ int main(){
    // Send the frequency
    
    // Update the current waveform
-   current_wavetype = func;
+   //current_wavetype = func;
 
-   // Get the current frequency running on the board
-   current_freq = writeAndRead("getfrequency");
-   usleep(1000000); // This delay is necessary to give the Arduino time
+   // Update the current frequency
+   //current_freq = freq;
 
    // Get the output status
    outputStatus = writeAndRead("getOS");
@@ -243,61 +292,43 @@ int main(){
    }
 
 
-   // Obtain the correct multiplier
-   float multiplier;
-   if (mult == "mHz") multiplier = 0.001;
-   else if (mult == "Hz") multiplier = 1;
-   else if (mult == "kHz") multiplier = 1000;
-   else multiplier = 1000000;
-
    // Validate the frequency
    // display the freq variable (for debugging purposes)
    //cout << h2(freq) << endl;
 
-  if (isNumber(freq) && stof(freq) >= 0){
-	  if(stof(freq)*multiplier > 12500000){
-		  freq = "12.5"; // freq must be a string type
-	  }
-	   uartWrite((func + "," + to_string(stof(freq)*multiplier)).c_str());
-	   // Update the current frequency 
-	   current_freq = to_string(stof(freq)*multiplier);
-   }
+
    // If nothing is entered but the form is submitted,
    // don't change the frequency
-   else if (freq == "*"){
+  // if (freq == ""){
 	   // No need to change the frequency
 	   // Re-write the current frequency just in case the waveform type changed
 	   // Get the current frequency running on the board
 	   //string current_freq2 = writeAndRead("getfrequency");
            //usleep(1000000); // This delay is necessary to give the Arduino time
-	   uartWrite((func + "," + current_freq).c_str());
-   }
+//	   uartWrite((func + "," + current_freq).c_str());
+   //}
+   if ((isNumber(freq_without_multiplier)) && (stof(freq_without_multiplier)) >= 0){
+	// Only update the freq/wavetype if something has been entered.
+	if (func != ""){
+		if(stof(freq_with_multiplier) > 12500000){
+			freq_with_multiplier = "12500000";
+			freq_without_multiplier = "12.5"; // freq must be a string type
+			mult = "MHz";
+		}// if
+		// Update the frequency and/or wave type running on the device
+  		uartWrite((func + "," + freq_with_multiplier).c_str());	 
+	}// if
+	else{
+		// If func is empty, get the current wavetype
+		func = get_current_wavetype();
+	}// else
+   }// if
    // If the frequency is invalid, display a message to the user
    else{
 	   cout << "<div style=\"color:red;\"> Please enter a positive numerical frequency value. </div>";
 	   //current_freq = writeAndRead("getfrequency");
 	   //usleep(1000000); // This delay is necessary to give the Arduino time
    }
-
-    // Display the current frequency
-    // Select the correct unit multiplier
-    // Must convert current_freq to a float
-    if (stof(current_freq) < 1){
-	current_freq = to_string(stof(current_freq)*1000);
-	mult = "mHz";
-    }
-    else if (stof(current_freq) >= 1 & stof(current_freq) < 1000){
-	current_freq = current_freq;
-	mult = "Hz";
-    }
-    else if (stof(current_freq) >= 1000 & stof(current_freq) < 1000000){
-	current_freq = to_string(stof(current_freq)/1000);
-	mult = "kHz";
-    }
-    else{
-	current_freq = to_string(stof(current_freq)/1000000);
-	mult = "MHz";
-    }
 
 
 
@@ -312,23 +343,24 @@ int main(){
    cout << "</p>";
 
    // Select the waveform
-   if (current_wavetype == "Sine"){
+   //if (func == "Sine"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
 		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
 		<< ( func=="Triangle" ? "checked":"") << "/> Triangle ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/> Square ";
-   }
-   else if (current_wavetype == "Triangle"){
+   //}
+   /*
+   else if (func == "Triangle"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
-		<< ( func=="Sine" ? "checked":"") << "/> Sine ";
+		<< "/" << ( func=="Sine" ? "checked":"") << "> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
 		<< ( func=="Triangle" ? "checked":"") << "/checked> Triangle ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/> Square ";
    }
-   else if (current_wavetype == "Square"){
+   else if (func == "Square"){
 	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
 		<< ( func=="Sine" ? "checked":"") << "/> Sine ";
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
@@ -336,14 +368,15 @@ int main(){
 	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
 		<< ( func=="Square" ? "checked":"") << "/checked> Square ";
    }
-//   else{
-//	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
-//		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
-//	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
-//		<< ( func=="Triangle" ? "checked":"") << "/> Triangle ";
-//	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
-//		<< ( func=="Square" ? "checked":"") << "/> Square ";
-//   }
+   else{
+	   cout << "<div>Set Waveform: <input type=\"radio\" name=\"func\" value=\"Sine\""
+		<< ( func=="Sine" ? "checked":"") << "/checked> Sine ";
+	   cout << "<input type=\"radio\" name=\"func\" value=\"Triangle\""
+		<< ( func=="Triangle" ? "checked":"") << "/> Triangle ";
+	   cout << "<input type=\"radio\" name=\"func\" value=\"Square\""
+		<< ( func=="Square" ? "checked":"") << "/> Square ";
+   }
+   */
 
    cout << "<input type=\"submit\" value=\"Set Output\" />";
    
@@ -361,19 +394,18 @@ int main(){
  
    	      	
 
-
-
-
-
    cout << "<b><h2><u> Current Settings </u>" << endl;
 
-   cout << "<p> Frequency: " << current_freq << " " << mult << "</p>" << endl;
-   cout << "<p> Wave Type: " <<  current_wavetype << "</p>" << endl;
+   cout << "<p> Frequency: " << freq_without_multiplier << " " << mult << "</p>" << endl;
+   cout << "<p> Wave Type: " << func << "</p>" << endl;
+  // cout << "<p> Wave Type: " << func << "</p>" << endl;
    cout << "<p> Output: " << outputStatus << "</p>" << endl;
    cout << "</b></h2>" << endl;
-
+   cout << "</form>" << endl; // end of form
 
    // Refresh button
+   // Start a new form
+   cout << "<form action=\"/cgi-bin/controlAD9833.cgi\" method=\"POST\">\n";
    cout << "<input type=\"submit\" value=\"Refresh\" /> </p>";
    cout << "</form>" << endl; // end of form
    // End the HTML
